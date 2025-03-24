@@ -38,6 +38,19 @@ const WatchPage: React.FC = () => {
     
     // Only fetch if we have an ID
     if (id) {
+      // Check if this is a local media ID
+      const isLocalMovie = (id as string).startsWith('movie_');
+      const isLocalSeries = (id as string).startsWith('series_');
+      
+      if (isLocalMovie || isLocalSeries) {
+        // For local media, redirect to stream page directly
+        console.log(`Redirecting local media ${id} to stream page`);
+        setTimeout(() => {
+          router.push(`/stream/${id}`);
+        }, 100);
+        return;
+      }
+      
       fetchMediaDetails(id as string);
       checkWatchlistStatus(id as string);
     }

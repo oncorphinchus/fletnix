@@ -5,10 +5,16 @@
 
 class JWTHandler {
     // JWT secret key - should be stored in a secure environment variable
-    private static $secretKey = 'fletnix_jwt_secret_key';
+    private static $secretKey;
     
     // Token expiration time in seconds (default: 24 hours)
-    private static $tokenExpiration = 86400;
+    private static $tokenExpiration;
+    
+    // Initialize static variables
+    public static function init() {
+        self::$secretKey = getenv('JWT_SECRET') ?: 'fletnix_jwt_secret_key';
+        self::$tokenExpiration = intval(getenv('JWT_EXPIRE')) ?: 86400;
+    }
     
     /**
      * Generate a JWT token for a user
@@ -25,7 +31,7 @@ class JWTHandler {
         $payload = self::base64UrlEncode(json_encode([
             'sub' => $userData['id'],
             'name' => $userData['username'],
-            'role' => $userData['role'],
+            'role' => isset($userData['role']) ? $userData['role'] : 'user',
             'iat' => time(),
             'exp' => time() + self::$tokenExpiration
         ]));

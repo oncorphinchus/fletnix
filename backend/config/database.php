@@ -5,7 +5,8 @@
 
 // Get environment variables from Docker
 $host = getenv('DB_HOST') ?: 'database';
-$dbname = getenv('DB_NAME') ?: 'fletnix';
+$port = getenv('DB_PORT') ?: '3306';
+$dbname = getenv('DB_DATABASE') ?: 'fletnix';
 $username = getenv('DB_USER') ?: 'fletnix_user';
 $password = getenv('DB_PASSWORD') ?: 'fletnix_password';
 
@@ -18,11 +19,11 @@ class Database {
      * @return PDO Database connection
      */
     public static function getConnection() {
-        global $host, $dbname, $username, $password;
+        global $host, $port, $dbname, $username, $password;
         
         if (self::$conn === null) {
             try {
-                $dsn = "mysql:host={$host};dbname={$dbname};charset=utf8mb4";
+                $dsn = "mysql:host={$host};port={$port};dbname={$dbname};charset=utf8mb4";
                 $options = [
                     PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
                     PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,

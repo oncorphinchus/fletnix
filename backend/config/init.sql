@@ -8,7 +8,9 @@ CREATE TABLE IF NOT EXISTS users (
     email VARCHAR(100) NOT NULL UNIQUE,
     password VARCHAR(255) NOT NULL,
     display_name VARCHAR(100),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    role ENUM('user', 'admin') DEFAULT 'user',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
 -- Create media table
@@ -47,6 +49,33 @@ CREATE TABLE IF NOT EXISTS watchlist (
     UNIQUE KEY user_media (user_id, media_id)
 );
 
+-- Create viewing history table
+CREATE TABLE IF NOT EXISTS viewing_history (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    user_id INT NOT NULL,
+    media_id VARCHAR(255) NOT NULL,
+    media_type VARCHAR(50) NOT NULL,
+    title VARCHAR(255) NOT NULL,
+    progress INT DEFAULT 0,
+    duration INT DEFAULT 0,
+    last_watched TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- Create favorites table
+CREATE TABLE IF NOT EXISTS favorites (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    user_id INT NOT NULL,
+    media_id VARCHAR(255) NOT NULL,
+    media_type VARCHAR(50) NOT NULL,
+    title VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    UNIQUE KEY user_media (user_id, media_id)
+);
+
 -- Insert some sample data
 INSERT INTO users (username, email, password, display_name)
 VALUES 
@@ -72,4 +101,10 @@ INSERT INTO history (user_id, media_id, progress)
 VALUES
 (1, 2, 0.75),
 (2, 1, 1.0),
-(2, 3, 0.25); 
+(2, 3, 0.25);
+
+-- Insert admin user if it doesn't exist
+-- Password is 'admin123' (bcrypt hashed)
+INSERT INTO users (username, email, password, display_name, role)
+VALUES ('admin', 'admin@fletnix.local', '$2y$10$GSNvA3FBx76FPnTZEbP43OGU605l./2vxNu4wLadY1A9BxJg9Aeeq', 'Admin', 'admin')
+ON DUPLICATE KEY UPDATE id = id; 

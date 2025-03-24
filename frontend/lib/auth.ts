@@ -1,4 +1,33 @@
-// Token management functions
+import api from './api';
+
+const TOKEN_KEY = 'fletnix_auth_token';
+const USER_KEY = 'fletnix_user';
+
+// Initialize with null values
+let token: string | null = null;
+let user: any = null;
+
+// Function to load cached values on client side
+export const loadCachedAuth = (): void => {
+  if (typeof window !== 'undefined') {
+    token = localStorage.getItem(TOKEN_KEY);
+    const userStr = localStorage.getItem(USER_KEY);
+    if (userStr) {
+      try {
+        user = JSON.parse(userStr);
+      } catch (e) {
+        // If user data is corrupted, clear it
+        localStorage.removeItem(USER_KEY);
+        user = null;
+      }
+    }
+  }
+};
+
+// Load cached auth data if on client side
+if (typeof window !== 'undefined') {
+  loadCachedAuth();
+}
 
 // Store token in local storage
 export const setLocalToken = (token: string): void => {
@@ -26,34 +55,53 @@ export const removeLocalToken = (): void => {
 
 // Check if user is authenticated
 export const isAuthenticated = (): boolean => {
-  const token = getLocalToken();
-  console.log('isAuthenticated check, token exists:', !!token);
+  // Make sure cached values are loaded
+  if (typeof window !== 'undefined' && token === null) {
+    loadCachedAuth();
+  }
+  
   return !!token;
 };
 
 // API authentication functions
 export const login = async (username: string, password: string): Promise<any> => {
   try {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/login`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ username, password }),
-    });
+    console.log(`Login request for user: ${username}`);
     
-    const data = await response.json();
+    const response = await api.post('/auth/login', { username, password });
+    console.log('Login raw response:', response);
     
-    if (!response.ok) {
-      throw new Error(data.message || 'Authentication failed');
+    // Check if response has the expected structure
+    if (response.data && response.data.status === 'success' && response.data.data) {
+      console.log('Successful login response:', response.data);
+      
+      // Check if token exists
+      if (response.data.data.token) {
+        const receivedToken: string = response.data.data.token;
+        // Only attempt substring if we have a string token
+        if (typeof receivedToken === 'string' && receivedToken.length > 10) {
+          console.log('Token received:', receivedToken.substring(0, 10) + '...');
+        } else {
+          console.log('Token received with unexpected format');
+        }
+        
+        // Save token and user data
+        token = receivedToken;
+        user = response.data.data.user || {}; // Get user from response or default to empty object
+        
+        // Save to localStorage
+        localStorage.setItem(TOKEN_KEY, token);
+        localStorage.setItem(USER_KEY, JSON.stringify(user));
+        
+        return response.data;
+      } else {
+        console.error('No token in response:', response.data);
+        throw new Error('Login successful but no token received');
+      }
+    } else {
+      console.error('Unexpected response format:', response.data);
+      throw new Error(response.data?.message || 'Login failed');
     }
-    
-    // Save token
-    if (data.token) {
-      setLocalToken(data.token);
-    }
-    
-    return data;
   } catch (error) {
     console.error('Login error:', error);
     throw error;
@@ -90,7 +138,15 @@ export const register = async (userData: {
 
 // Logout function
 export const logout = (): void => {
-  removeLocalToken();
+  // Clear memory values
+  token = null;
+  user = null;
+  
+  // Clear localStorage
+  if (typeof window !== 'undefined') {
+    localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(USER_KEY);
+  }
 };
 
 // Fetch with authentication token
@@ -136,4 +192,21 @@ export const fetchWithAuth = async (url: string, options: RequestInit = {}): Pro
     console.error('Error in fetchWithAuth:', error);
     throw error;
   }
+};
+
+export const getUser = (): any => {
+  // Make sure cached values are loaded
+  if (typeof window !== 'undefined' && user === null) {
+    loadCachedAuth();
+  }
+  
+  return user || null;
+};
+
+export default {
+  login,
+  logout,
+  isAuthenticated,
+  getUser,
+  getLocalToken
 }; 

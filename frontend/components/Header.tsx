@@ -45,6 +45,11 @@ function Header() {
                 Home
               </a>
             </Link>
+            <Link href="/browse" legacyBehavior>
+              <a className={`text-sm font-medium ${router.pathname === '/browse' ? 'text-primary' : 'text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary'}`}>
+                Browse
+              </a>
+            </Link>
             <Link href="/movies" legacyBehavior>
               <a className={`text-sm font-medium ${router.pathname === '/movies' ? 'text-primary' : 'text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary'}`}>
                 Movies
@@ -136,6 +141,11 @@ function Header() {
               <Link href="/" legacyBehavior>
                 <a className={`text-base font-medium ${router.pathname === '/' ? 'text-primary' : 'text-gray-700 dark:text-gray-300'}`}>
                   Home
+                </a>
+              </Link>
+              <Link href="/browse" legacyBehavior>
+                <a className={`text-base font-medium ${router.pathname === '/browse' ? 'text-primary' : 'text-gray-700 dark:text-gray-300'}`}>
+                  Browse
                 </a>
               </Link>
               <Link href="/movies" legacyBehavior>

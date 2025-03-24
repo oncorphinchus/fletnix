@@ -21,7 +21,7 @@ class User {
         $limit = isset($params['limit']) ? intval($params['limit']) : 10;
         $offset = isset($params['offset']) ? intval($params['offset']) : 0;
         
-        $query = "SELECT id, username, email, display_name, role, created_at, updated_at 
+        $query = "SELECT id, username, email, display_name, created_at 
                  FROM {$this->table} 
                  ORDER BY id DESC 
                  LIMIT :limit OFFSET :offset";
@@ -41,7 +41,7 @@ class User {
      * @return array|false User data or false if not found
      */
     public function getById($id) {
-        $query = "SELECT id, username, email, display_name, role, created_at, updated_at 
+        $query = "SELECT id, username, email, display_name, created_at 
                  FROM {$this->table} 
                  WHERE id = :id";
         
@@ -59,7 +59,7 @@ class User {
      * @return array|false User data or false if not found
      */
     public function getByUsername($username) {
-        $query = "SELECT id, username, email, password, display_name, role, created_at, updated_at 
+        $query = "SELECT id, username, email, password, display_name, created_at 
                  FROM {$this->table} 
                  WHERE username = :username";
         
@@ -86,19 +86,15 @@ class User {
         $hashedPassword = password_hash($data['password'], PASSWORD_DEFAULT);
         
         $query = "INSERT INTO {$this->table} 
-                 (username, email, password, display_name, role) 
+                 (username, email, password, display_name) 
                  VALUES 
-                 (:username, :email, :password, :display_name, :role)";
+                 (:username, :email, :password, :display_name)";
         
         $stmt = $this->conn->prepare($query);
         $stmt->bindParam(':username', $data['username']);
         $stmt->bindParam(':email', $data['email']);
         $stmt->bindParam(':password', $hashedPassword);
         $stmt->bindParam(':display_name', $data['display_name']);
-        
-        // Set role to 'user' by default
-        $role = isset($data['role']) && $data['role'] === 'admin' ? 'admin' : 'user';
-        $stmt->bindParam(':role', $role);
         
         if ($stmt->execute()) {
             return $this->conn->lastInsertId();
@@ -139,11 +135,6 @@ class User {
         if (isset($data['password'])) {
             $query .= " password = :password,";
             $params[':password'] = password_hash($data['password'], PASSWORD_DEFAULT);
-        }
-        
-        if (isset($data['role']) && in_array($data['role'], ['admin', 'user'])) {
-            $query .= " role = :role,";
-            $params[':role'] = $data['role'];
         }
         
         // Remove trailing comma

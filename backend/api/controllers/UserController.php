@@ -12,6 +12,7 @@ class UserController {
     
     public function __construct() {
         $this->userModel = new User();
+        JWTHandler::init();
     }
     
     /**

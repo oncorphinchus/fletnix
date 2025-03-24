@@ -2,56 +2,61 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
 import Link from 'next/link';
-import { setLocalToken, isAuthenticated } from '@/lib/auth';
+import { login, isAuthenticated } from '@/lib/auth';
 
 const Login: React.FC = () => {
   const router = useRouter();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
   
   useEffect(() => {
-    console.log("Login page loaded");
-    // If user is already authenticated, redirect to home
+    // Check if already authenticated
     if (isAuthenticated()) {
-      console.log("User already authenticated, redirecting to home");
+      console.log('User is already authenticated, redirecting to home');
       router.push('/');
+    } else {
+      console.log('User is not authenticated, staying on login page');
     }
   }, [router]);
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
-    setIsLoading(true);
+    
+    if (!username || !password) {
+      setError('Username and password are required');
+      return;
+    }
     
     try {
-      console.log("Attempting login with username:", username);
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/login`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ username, password }),
-      });
+      console.log('Attempting login with username:', username);
+      setIsLoggingIn(true);
+      setError('');
       
-      console.log("Login response status:", response.status);
+      // Log the API URL that we're using
+      console.log('Using API URL:', process.env.NEXT_PUBLIC_API_URL);
       
-      if (response.ok) {
-        const data = await response.json();
-        console.log("Login successful, token received");
-        setLocalToken(data.token);
-        router.push('/');
+      const response = await login(username, password);
+      console.log('Login response received:', response);
+      
+      if (response && response.status === 'success' && response.data) {
+        console.log('Login successful, token received:', response.data.token ? 'YES' : 'NO');
+        
+        // Force a slight delay before redirecting
+        setTimeout(() => {
+          console.log('Redirecting to home page...');
+          router.push('/');
+        }, 500);
       } else {
-        const errorData = await response.json();
-        console.error("Login error:", errorData);
-        setError(errorData.message || 'Invalid username or password');
+        console.error('Login response indicated failure:', response);
+        setError(response.message || 'Login failed. Please try again.');
       }
     } catch (err) {
-      console.error("Login fetch error:", err);
-      setError('Failed to connect to the server. Please try again later.');
+      console.error('Login error:', err);
+      setError(err instanceof Error ? err.message : 'An unexpected error occurred. Please try again.');
     } finally {
-      setIsLoading(false);
+      setIsLoggingIn(false);
     }
   };
   
@@ -108,10 +113,10 @@ const Login: React.FC = () => {
           <div>
             <button
               type="submit"
-              disabled={isLoading}
+              disabled={isLoggingIn}
               className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isLoading ? 'Signing in...' : 'Sign in'}
+              {isLoggingIn ? 'Signing in...' : 'Sign in'}
             </button>
           </div>
         </form>

@@ -4,12 +4,14 @@
  */
 
 require_once __DIR__ . '/../models/User.php';
+require_once __DIR__ . '/../../helpers/JWTHandler.php';
 
 class AuthController {
     private $userModel;
     
     public function __construct() {
         $this->userModel = new User();
+        JWTHandler::init();
     }
     
     /**
@@ -67,7 +69,7 @@ class AuthController {
      * 
      * @param array $data Login data
      */
-    private function login($data) {
+    public function login($data) {
         // Validate required fields
         if (!isset($data['username']) || !isset($data['password'])) {
             ApiResponse::validationError([
@@ -98,7 +100,7 @@ class AuthController {
      * 
      * @param array $data Registration data
      */
-    private function register($data) {
+    public function register($data) {
         // Validate required fields
         $errors = [];
         
