@@ -1,170 +1,108 @@
-# Fletnix
+# Fletnix Media Streaming Platform
 
-Fletnix is a personal media streaming application that provides a beautiful interface for browsing and watching your media collection. It consists of a PHP backend API and a Next.js frontend.
+Fletnix is a personal media streaming application with a PHP backend API and a Next.js frontend.
 
-## Overview
+## Quick Start with Docker
 
-Fletnix is designed to enhance your media streaming experience with a user-friendly interface and robust features. The application can integrate with your media server (such as Jellyfin) and provides a modern web UI for accessing your content.
+The easiest way to run Fletnix is using Docker:
 
-## Features
+```bash
+# Clone this repository
+git clone https://github.com/oncorphinchus/fletnix.git
+cd fletnix
 
-- **User Authentication**: Secure login and registration
-- **Media Browsing**: Browse movies and TV shows with a Netflix-like interface
-- **Media Details**: View comprehensive information about each media item
-- **Search**: Find media by title or other attributes
-- **Watchlist**: Save media items to watch later
-- **History Tracking**: Keep track of what you've watched
-- **Modern UI**: Responsive design with dark mode support
+# Run the application
+./run-fletnix.sh
+```
+
+After running, access the following services:
+- Frontend: http://localhost:3000
+- Backend API: http://localhost:8080/api
+- Jellyfin: http://localhost:8096
+
+Default login credentials:
+- Username: admin
+- Password: admin123
+
+## Manual Setup
+
+If you prefer to set up the services manually:
+
+### Backend Setup
+
+```bash
+cd backend
+# Set up environment variables
+cp ../.env.example .env
+# Install dependencies if using Composer
+# composer install
+```
+
+### Frontend Setup
+
+```bash
+cd frontend
+# Install dependencies
+npm install
+# Set up environment variables
+cp ../.env.example .env.local
+# Run development server
+npm run dev
+```
+
+### Database Setup
+
+The database schema is automatically initialized when you run Docker. If setting up manually, use the `backend/config/init.sql` file.
+
+## Development
+
+### Frontend Development
+
+The frontend is built with Next.js and TypeScript. To start development:
+
+```bash
+cd frontend
+npm run dev
+```
+
+### Backend Development
+
+The backend is a PHP API. Files in the `backend` directory are mounted into the Docker container, so changes will be immediately available.
 
 ## Project Structure
 
-The project is divided into two main parts:
-
-- **Backend**: PHP API with MySQL database
-- **Frontend**: Next.js application with TypeScript and TailwindCSS
-
-### Backend Structure
-
-- `/api`: API endpoints
-  - `/controllers`: Request handlers
-  - `/models`: Database models
-- `/config`: Configuration files
-- `/helpers`: Utility classes
-
-### Frontend Structure
-
-- `/components`: Reusable UI components
-- `/lib`: Utility functions and hooks
-- `/pages`: Next.js pages (routes)
-- `/public`: Static assets
-- `/styles`: Global styles and TailwindCSS configuration
-
-## Requirements
-
-- PHP 7.4 or higher
-- MySQL 5.7 or higher
-- Node.js 14 or higher
-- npm or yarn
-- Docker (optional)
-
-## Getting Started
-
-### Using Docker (Recommended)
-
-1. Clone the repository:
-   ```
-   git clone https://github.com/yourusername/fletnix.git
-   cd fletnix
-   ```
-
-2. Copy the sample environment file:
-   ```
-   cp frontend/.env.example frontend/.env.local
-   ```
-
-3. Start the application using Docker Compose:
-   ```
-   docker-compose up -d
-   ```
-
-4. Access the application:
-   - Frontend: http://localhost:3000
-   - Backend API: http://localhost:8080/api
-
-### Manual Setup
-
-#### Backend
-
-1. Navigate to the backend directory:
-   ```
-   cd backend
-   ```
-
-2. Set up a virtual host pointing to the `/backend` directory in your web server (Apache/Nginx)
-
-3. Import the database schema:
-   ```
-   mysql -u username -p < config/init.sql
-   ```
-
-4. Configure your database connection in `config/database.php`
-
-#### Frontend
-
-1. Navigate to the frontend directory:
-   ```
-   cd frontend
-   ```
-
-2. Install dependencies:
-   ```
-   npm install
-   # or
-   yarn install
-   ```
-
-3. Create a `.env.local` file with:
-   ```
-   NEXT_PUBLIC_API_URL=http://localhost:8080/api
-   ```
-
-4. Start the development server:
-   ```
-   npm run dev
-   # or
-   yarn dev
-   ```
-
-5. Access the frontend at http://localhost:3000
+See the detailed project structure in [structure.md](structure.md).
 
 ## API Documentation
 
-### Authentication Endpoints
+The backend provides the following endpoints:
 
-- `POST /api/auth/login`: User login
-- `POST /api/auth/register`: User registration
+### Authentication
+- `POST /api/auth/login`: Login with username/password
+- `POST /api/auth/register`: Create a new account
 
-### Media Endpoints
+### Media
+- `GET /api/media`: List all media
+- `GET /api/media/{id}`: Get specific media details
+- `GET /api/media/featured`: Get featured content
+- `GET /api/media/{id}/stream`: Get streaming URL
 
-- `GET /api/media`: Get all media items
-- `GET /api/media/{id}`: Get a specific media item
-- `GET /api/media/featured`: Get featured media
-- `GET /api/media/recent`: Get recently added media
-
-### User Endpoints
-
+### User
 - `GET /api/users/profile`: Get user profile
-- `PUT /api/users/profile`: Update user profile
+- `PUT /api/users/profile`: Update profile
 
-### Watchlist Endpoints
-
+### Watchlist and History
 - `GET /api/watchlist`: Get user's watchlist
-- `POST /api/watchlist/add/{id}`: Add item to watchlist
-- `POST /api/watchlist/remove/{id}`: Remove item from watchlist
-
-### History Endpoints
-
-- `GET /api/history`: Get user's watch history
-- `POST /api/history/add`: Add item to history
+- `POST /api/watchlist/add/{id}`: Add to watchlist
+- `GET /api/history`: Get viewing history
+- `POST /api/history/add`: Add to history
 
 ## Technologies Used
 
-### Backend
-- PHP
-- MySQL
-- JWT for authentication
-
-### Frontend
-- Next.js
-- React
-- TypeScript
-- TailwindCSS
-- SWR for data fetching
+- **Backend**: PHP, MySQL, JWT authentication
+- **Frontend**: Next.js, React, TypeScript, TailwindCSS
+- **Infrastructure**: Docker, Docker Compose
 
 ## License
 
-This project is proprietary.
-
-## Contributing
-
-This is a personal project and not open for contributions at this time. 
+This project is proprietary and not intended for redistribution. 

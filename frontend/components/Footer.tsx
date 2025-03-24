@@ -2,7 +2,8 @@ import React from 'react';
 import Link from 'next/link';
 import { FaGithub, FaTwitter, FaEnvelope } from 'react-icons/fa';
 
-const Footer: React.FC = () => {
+// Use simple function declaration
+function Footer() {
   const currentYear = new Date().getFullYear();
   
   return (
@@ -20,23 +21,31 @@ const Footer: React.FC = () => {
             <h4 className="text-sm font-semibold uppercase tracking-wider text-gray-700 dark:text-gray-300 mb-4">Navigation</h4>
             <ul className="space-y-2">
               <li>
-                <Link href="/" className="text-gray-600 dark:text-gray-400 hover:text-primary dark:hover:text-primary text-sm">
-                  Home
+                <Link href="/" legacyBehavior>
+                  <a className="text-gray-600 dark:text-gray-400 hover:text-primary dark:hover:text-primary text-sm">
+                    Home
+                  </a>
                 </Link>
               </li>
               <li>
-                <Link href="/movies" className="text-gray-600 dark:text-gray-400 hover:text-primary dark:hover:text-primary text-sm">
-                  Movies
+                <Link href="/movies" legacyBehavior>
+                  <a className="text-gray-600 dark:text-gray-400 hover:text-primary dark:hover:text-primary text-sm">
+                    Movies
+                  </a>
                 </Link>
               </li>
               <li>
-                <Link href="/series" className="text-gray-600 dark:text-gray-400 hover:text-primary dark:hover:text-primary text-sm">
-                  TV Series
+                <Link href="/series" legacyBehavior>
+                  <a className="text-gray-600 dark:text-gray-400 hover:text-primary dark:hover:text-primary text-sm">
+                    TV Series
+                  </a>
                 </Link>
               </li>
               <li>
-                <Link href="/watchlist" className="text-gray-600 dark:text-gray-400 hover:text-primary dark:hover:text-primary text-sm">
-                  My List
+                <Link href="/watchlist" legacyBehavior>
+                  <a className="text-gray-600 dark:text-gray-400 hover:text-primary dark:hover:text-primary text-sm">
+                    My List
+                  </a>
                 </Link>
               </li>
             </ul>
@@ -46,18 +55,24 @@ const Footer: React.FC = () => {
             <h4 className="text-sm font-semibold uppercase tracking-wider text-gray-700 dark:text-gray-300 mb-4">Support</h4>
             <ul className="space-y-2">
               <li>
-                <Link href="/help" className="text-gray-600 dark:text-gray-400 hover:text-primary dark:hover:text-primary text-sm">
-                  Help Center
+                <Link href="/help" legacyBehavior>
+                  <a className="text-gray-600 dark:text-gray-400 hover:text-primary dark:hover:text-primary text-sm">
+                    Help Center
+                  </a>
                 </Link>
               </li>
               <li>
-                <Link href="/contact" className="text-gray-600 dark:text-gray-400 hover:text-primary dark:hover:text-primary text-sm">
-                  Contact Us
+                <Link href="/contact" legacyBehavior>
+                  <a className="text-gray-600 dark:text-gray-400 hover:text-primary dark:hover:text-primary text-sm">
+                    Contact Us
+                  </a>
                 </Link>
               </li>
               <li>
-                <Link href="/faq" className="text-gray-600 dark:text-gray-400 hover:text-primary dark:hover:text-primary text-sm">
-                  FAQ
+                <Link href="/faq" legacyBehavior>
+                  <a className="text-gray-600 dark:text-gray-400 hover:text-primary dark:hover:text-primary text-sm">
+                    FAQ
+                  </a>
                 </Link>
               </li>
             </ul>
@@ -67,13 +82,17 @@ const Footer: React.FC = () => {
             <h4 className="text-sm font-semibold uppercase tracking-wider text-gray-700 dark:text-gray-300 mb-4">Legal</h4>
             <ul className="space-y-2">
               <li>
-                <Link href="/terms" className="text-gray-600 dark:text-gray-400 hover:text-primary dark:hover:text-primary text-sm">
-                  Terms of Service
+                <Link href="/terms" legacyBehavior>
+                  <a className="text-gray-600 dark:text-gray-400 hover:text-primary dark:hover:text-primary text-sm">
+                    Terms of Service
+                  </a>
                 </Link>
               </li>
               <li>
-                <Link href="/privacy" className="text-gray-600 dark:text-gray-400 hover:text-primary dark:hover:text-primary text-sm">
-                  Privacy Policy
+                <Link href="/privacy" legacyBehavior>
+                  <a className="text-gray-600 dark:text-gray-400 hover:text-primary dark:hover:text-primary text-sm">
+                    Privacy Policy
+                  </a>
                 </Link>
               </li>
             </ul>
@@ -118,6 +137,6 @@ const Footer: React.FC = () => {
       </div>
     </footer>
   );
-};
+}
 
 export default Footer; 

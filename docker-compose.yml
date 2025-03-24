@@ -34,7 +34,7 @@ services:
       - DB_DATABASE=fletnix
       - DB_USERNAME=fletnix
       - DB_PASSWORD=fletnix_password
-      - JWT_SECRET=your_jwt_secret_key
+      - JWT_SECRET=your_jwt_secret_key_change_this_in_production
       - JWT_EXPIRE=86400
     depends_on:
       - db
@@ -47,7 +47,7 @@ services:
     ports:
       - "3306:3306"
     environment:
-      - MYSQL_ROOT_PASSWORD=root_password
+      - MYSQL_ROOT_PASSWORD=root
       - MYSQL_DATABASE=fletnix
       - MYSQL_USER=fletnix
       - MYSQL_PASSWORD=fletnix_password

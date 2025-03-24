@@ -5,8 +5,8 @@ import Layout from '../components/Layout';
 import MediaGrid from '../components/MediaGrid';
 import { fetchWithAuth, isAuthenticated } from '../lib/auth';
 
-// Define Media item interface
-interface MediaItem {
+// Define API Media item interface
+interface ApiMediaItem {
   id: number;
   title: string;
   poster_path: string;
@@ -15,10 +15,25 @@ interface MediaItem {
   rating?: number;
 }
 
+// Adapter function to convert API media items to component format
+function adaptMediaItems(apiItems: ApiMediaItem[]): Array<{
+  id: string;
+  title: string;
+  thumbnailPath: string;
+  type: string;
+}> {
+  return apiItems.map(item => ({
+    id: String(item.id),
+    title: item.title,
+    thumbnailPath: item.poster_path,
+    type: item.type
+  }));
+}
+
 const Home: React.FC = () => {
   const router = useRouter();
-  const [featuredMedia, setFeaturedMedia] = useState<MediaItem[]>([]);
-  const [recentAdditions, setRecentAdditions] = useState<MediaItem[]>([]);
+  const [featuredMedia, setFeaturedMedia] = useState<ApiMediaItem[]>([]);
+  const [recentAdditions, setRecentAdditions] = useState<ApiMediaItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
   
@@ -79,7 +94,7 @@ const Home: React.FC = () => {
             <section className="mb-12">
               <h2 className="text-2xl font-bold mb-4 text-gray-900 dark:text-white">Featured Content</h2>
               {featuredMedia.length > 0 ? (
-                <MediaGrid items={featuredMedia} />
+                <MediaGrid items={adaptMediaItems(featuredMedia)} />
               ) : (
                 <p className="text-gray-600 dark:text-gray-400">No featured content available.</p>
               )}
@@ -88,7 +103,7 @@ const Home: React.FC = () => {
             <section className="mb-12">
               <h2 className="text-2xl font-bold mb-4 text-gray-900 dark:text-white">Recently Added</h2>
               {recentAdditions.length > 0 ? (
-                <MediaGrid items={recentAdditions} />
+                <MediaGrid items={adaptMediaItems(recentAdditions)} />
               ) : (
                 <p className="text-gray-600 dark:text-gray-400">No recent additions available.</p>
               )}

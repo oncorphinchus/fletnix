@@ -1,17 +1,17 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { isAuthenticated, logout } from '../lib/auth';
 import { FaSearch, FaUser, FaSignOutAlt, FaBars, FaTimes } from 'react-icons/fa';
 
-const Header: React.FC = () => {
+function Header() {
   const router = useRouter();
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
-  const [isAuthenticated_, setIsAuthenticated] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [isMenuOpen, setIsMenuOpen] = React.useState(false);
+  const [isUserMenuOpen, setIsUserMenuOpen] = React.useState(false);
+  const [isAuthenticated_, setIsAuthenticated] = React.useState(false);
+  const [searchQuery, setSearchQuery] = React.useState('');
   
-  useEffect(() => {
+  React.useEffect(() => {
     setIsAuthenticated(isAuthenticated());
   }, [router.pathname]);
   
@@ -32,23 +32,33 @@ const Header: React.FC = () => {
       <div className="container mx-auto px-4">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
-          <Link href="/" className="flex items-center">
-            <span className="text-2xl font-bold text-primary">Fletnix</span>
+          <Link href="/" legacyBehavior>
+            <a className="flex items-center">
+              <span className="text-2xl font-bold text-primary">Fletnix</span>
+            </a>
           </Link>
           
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center space-x-8">
-            <Link href="/" className={`text-sm font-medium ${router.pathname === '/' ? 'text-primary' : 'text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary'}`}>
-              Home
+            <Link href="/" legacyBehavior>
+              <a className={`text-sm font-medium ${router.pathname === '/' ? 'text-primary' : 'text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary'}`}>
+                Home
+              </a>
             </Link>
-            <Link href="/movies" className={`text-sm font-medium ${router.pathname === '/movies' ? 'text-primary' : 'text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary'}`}>
-              Movies
+            <Link href="/movies" legacyBehavior>
+              <a className={`text-sm font-medium ${router.pathname === '/movies' ? 'text-primary' : 'text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary'}`}>
+                Movies
+              </a>
             </Link>
-            <Link href="/series" className={`text-sm font-medium ${router.pathname === '/series' ? 'text-primary' : 'text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary'}`}>
-              TV Series
+            <Link href="/series" legacyBehavior>
+              <a className={`text-sm font-medium ${router.pathname === '/series' ? 'text-primary' : 'text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary'}`}>
+                TV Series
+              </a>
             </Link>
-            <Link href="/watchlist" className={`text-sm font-medium ${router.pathname === '/watchlist' ? 'text-primary' : 'text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary'}`}>
-              My List
+            <Link href="/watchlist" legacyBehavior>
+              <a className={`text-sm font-medium ${router.pathname === '/watchlist' ? 'text-primary' : 'text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary'}`}>
+                My List
+              </a>
             </Link>
           </nav>
           
@@ -85,11 +95,15 @@ const Header: React.FC = () => {
                 {/* User Dropdown Menu */}
                 {isUserMenuOpen && (
                   <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 shadow-lg rounded-md py-1 z-10">
-                    <Link href="/profile" className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
-                      Profile
+                    <Link href="/profile" legacyBehavior>
+                      <a className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+                        Profile
+                      </a>
                     </Link>
-                    <Link href="/settings" className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
-                      Settings
+                    <Link href="/settings" legacyBehavior>
+                      <a className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+                        Settings
+                      </a>
                     </Link>
                     <hr className="my-1 border-gray-200 dark:border-gray-700" />
                     <button
@@ -119,17 +133,25 @@ const Header: React.FC = () => {
         {isMenuOpen && (
           <div className="md:hidden py-4 border-t border-gray-200 dark:border-gray-700">
             <div className="flex flex-col space-y-4">
-              <Link href="/" className={`text-base font-medium ${router.pathname === '/' ? 'text-primary' : 'text-gray-700 dark:text-gray-300'}`}>
-                Home
+              <Link href="/" legacyBehavior>
+                <a className={`text-base font-medium ${router.pathname === '/' ? 'text-primary' : 'text-gray-700 dark:text-gray-300'}`}>
+                  Home
+                </a>
               </Link>
-              <Link href="/movies" className={`text-base font-medium ${router.pathname === '/movies' ? 'text-primary' : 'text-gray-700 dark:text-gray-300'}`}>
-                Movies
+              <Link href="/movies" legacyBehavior>
+                <a className={`text-base font-medium ${router.pathname === '/movies' ? 'text-primary' : 'text-gray-700 dark:text-gray-300'}`}>
+                  Movies
+                </a>
               </Link>
-              <Link href="/series" className={`text-base font-medium ${router.pathname === '/series' ? 'text-primary' : 'text-gray-700 dark:text-gray-300'}`}>
-                TV Series
+              <Link href="/series" legacyBehavior>
+                <a className={`text-base font-medium ${router.pathname === '/series' ? 'text-primary' : 'text-gray-700 dark:text-gray-300'}`}>
+                  TV Series
+                </a>
               </Link>
-              <Link href="/watchlist" className={`text-base font-medium ${router.pathname === '/watchlist' ? 'text-primary' : 'text-gray-700 dark:text-gray-300'}`}>
-                My List
+              <Link href="/watchlist" legacyBehavior>
+                <a className={`text-base font-medium ${router.pathname === '/watchlist' ? 'text-primary' : 'text-gray-700 dark:text-gray-300'}`}>
+                  My List
+                </a>
               </Link>
               
               {/* Mobile search */}
@@ -154,9 +176,11 @@ const Header: React.FC = () => {
               {/* Mobile User options */}
               {isAuthenticated_ && (
                 <div className="border-t border-gray-200 dark:border-gray-700 pt-4 mt-2">
-                  <Link href="/profile" className="flex items-center py-2 text-gray-700 dark:text-gray-300">
-                    <FaUser className="mr-3 h-5 w-5" />
-                    Profile
+                  <Link href="/profile" legacyBehavior>
+                    <a className="flex items-center py-2 text-gray-700 dark:text-gray-300">
+                      <FaUser className="mr-3 h-5 w-5" />
+                      Profile
+                    </a>
                   </Link>
                   <button
                     onClick={handleLogout}
@@ -173,6 +197,6 @@ const Header: React.FC = () => {
       </div>
     </header>
   );
-};
+}
 
 export default Header; 
