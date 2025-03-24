@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
-import { isAuthenticated, fetchWithAuth } from '../../lib/auth';
+import { isAuthenticated, fetchWithAuth, getLocalToken } from '../../lib/auth';
 import { FaArrowLeft, FaExpand, FaPause, FaPlay, FaVolumeUp, FaVolumeMute } from 'react-icons/fa';
+import { fetchLocalMedia, getMediaUrl } from '../../lib/api';
 
 interface MediaDetails {
   id: number;
@@ -39,6 +40,15 @@ const StreamPage: React.FC = () => {
     
     // Only fetch if we have an ID
     if (id) {
+      // Check if this is a local media ID
+      const isLocalMovie = (id as string).startsWith('movie_');
+      
+      if (isLocalMovie) {
+        // For local movies, we'll fetch the media details from our scan API
+        fetchLocalMediaDetails(id as string);
+        return;
+      }
+      
       fetchMediaDetails(id as string);
     }
     
@@ -66,6 +76,45 @@ const StreamPage: React.FC = () => {
     } catch (err) {
       console.error('Error fetching stream details:', err);
       setError('An error occurred while loading the stream.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  const fetchLocalMediaDetails = async (mediaId: string) => {
+    setIsLoading(true);
+    try {
+      // Fetch all local media to find this item
+      const localMedia = await fetchLocalMedia();
+      
+      console.log('Local media data:', localMedia);
+      
+      if (localMedia && localMedia.movies) {
+        const movie = localMedia.movies.find((m: any) => m.id === mediaId);
+        
+        if (movie) {
+          console.log('Found local movie:', movie);
+          // Convert the filepath to a full URL
+          const streamUrl = getMediaUrl(movie.filepath);
+          console.log('Stream URL:', streamUrl);
+          
+          setMediaDetails({
+            id: movie.id,
+            title: movie.title,
+            type: movie.type,
+            stream_url: streamUrl // Use the full URL for streaming
+          });
+        } else {
+          console.error('Movie not found in local library:', mediaId);
+          setError('Movie not found in the media library');
+        }
+      } else {
+        console.error('No local movies found in scan result');
+        setError('Failed to retrieve movie information');
+      }
+    } catch (err) {
+      console.error('Error fetching local media details:', err);
+      setError('An error occurred while loading the media file');
     } finally {
       setIsLoading(false);
     }
@@ -173,7 +222,43 @@ const StreamPage: React.FC = () => {
   };
   
   const goBack = () => {
-    router.push(`/watch/${id}`);
+    // Pause the video if it's playing
+    if (videoRef.current && !videoRef.current.paused) {
+      videoRef.current.pause();
+    }
+    
+    // Use router.push to force navigation to the previous page
+    // The fallback path ensures we go somewhere useful if history is empty
+    try {
+      console.log('Navigating back from stream page...');
+      
+      // If ID starts with 'movie_' or 'series_', go to the appropriate media page
+      if (id && typeof id === 'string') {
+        if (id.startsWith('movie_')) {
+          router.push('/movies');
+          return;
+        } else if (id.startsWith('series_')) {
+          router.push('/series');
+          return;
+        }
+      }
+      
+      // Otherwise try to go back in history, or to home page as fallback
+      router.back();
+      
+      // Set a fallback timer to go to home page if back() doesn't work
+      setTimeout(() => {
+        router.push('/');
+      }, 300);
+    } catch (err) {
+      console.error('Navigation error:', err);
+      router.push('/');
+    }
+  };
+  
+  const handleVideoError = () => {
+    console.error('Video failed to load');
+    setError('An error occurred while loading the media file. The file format may not be supported by your browser or the file may be unavailable.');
   };
   
   if (isLoading) {
@@ -220,16 +305,24 @@ const StreamPage: React.FC = () => {
           onPlay={() => setIsPlaying(true)}
           onPause={() => setIsPlaying(false)}
           onEnded={() => setIsPlaying(false)}
+          onError={handleVideoError}
           autoPlay
         />
         
         {/* Back button */}
         <div 
           className={`absolute top-4 left-4 z-10 transition-opacity duration-300 ${isControlsVisible ? 'opacity-100' : 'opacity-0'}`}
-          onClick={(e) => e.stopPropagation()}
+          onClick={(e) => {
+            e.stopPropagation(); // Stop event propagation
+            e.preventDefault(); // Prevent default behavior
+          }}
         >
           <button 
-            onClick={goBack}
+            onClick={(e) => {
+              e.stopPropagation(); // Stop event from triggering video play/pause
+              e.preventDefault(); // Prevent default behavior
+              goBack(); // Navigate back
+            }}
             className="flex items-center bg-black/50 hover:bg-black/70 text-white px-3 py-2 rounded-full transition-colors"
           >
             <FaArrowLeft className="mr-2" /> Back
@@ -244,7 +337,10 @@ const StreamPage: React.FC = () => {
           {/* Progress bar */}
           <div 
             className="h-1 w-full bg-gray-600 cursor-pointer mb-4 rounded-full overflow-hidden"
-            onClick={handleSeek}
+            onClick={(e) => {
+              e.stopPropagation(); // Prevent togglePlay from being triggered
+              handleSeek(e);
+            }}
           >
             <div 
               ref={progressRef}
@@ -257,16 +353,22 @@ const StreamPage: React.FC = () => {
             <div className="flex items-center space-x-4">
               {/* Play/Pause button */}
               <button 
-                onClick={togglePlay}
+                onClick={(e) => {
+                  e.stopPropagation(); // Prevent duplicate togglePlay
+                  togglePlay();
+                }}
                 className="text-white hover:text-primary"
               >
                 {isPlaying ? <FaPause size={20} /> : <FaPlay size={20} />}
               </button>
               
               {/* Volume controls */}
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center space-x-2" onClick={(e) => e.stopPropagation()}>
                 <button 
-                  onClick={toggleMute}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    toggleMute();
+                  }}
                   className="text-white hover:text-primary"
                 >
                   {isMuted ? <FaVolumeMute size={20} /> : <FaVolumeUp size={20} />}
@@ -277,20 +379,27 @@ const StreamPage: React.FC = () => {
                   max="1"
                   step="0.01"
                   value={isMuted ? 0 : volume}
-                  onChange={handleVolumeChange}
+                  onChange={(e) => {
+                    e.stopPropagation();
+                    handleVolumeChange(e);
+                  }}
                   className="w-20 md:w-32 accent-primary"
+                  onClick={(e) => e.stopPropagation()}
                 />
               </div>
               
               {/* Time display */}
-              <div className="text-white text-sm hidden sm:block">
+              <div className="text-white text-sm hidden sm:block" onClick={(e) => e.stopPropagation()}>
                 {formatTime(currentTime)} / {formatTime(duration)}
               </div>
             </div>
             
             {/* Fullscreen button */}
             <button 
-              onClick={toggleFullscreen}
+              onClick={(e) => {
+                e.stopPropagation();
+                toggleFullscreen();
+              }}
               className="text-white hover:text-primary"
             >
               <FaExpand size={20} />

@@ -19,6 +19,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 
 // Include required files
 require_once __DIR__ . '/../helpers/ApiResponse.php';
+require_once __DIR__ . '/../helpers/JWTHandler.php';
+require_once __DIR__ . '/../config/database.php';
 
 // Get request method and URI
 $method = $_SERVER['REQUEST_METHOD'];
@@ -113,6 +115,11 @@ try {
         $controller->clear($body ?: []);
     } else if ($controllerName === 'History' && $id === 'progress' && isset($path[0]) && $method === 'GET') {
         $controller->getProgress($path[0]);
+    } else if ($controllerName === 'Media' && $id === 'scan' && $method === 'GET') {
+        $controller->scanLocalMedia();
+    } else if ($controllerName === 'Media' && $id === 'file' && $method === 'GET') {
+        // Special handler for serving media files directly
+        $controller->serveMediaFile(array_slice($segments, 2));
     } else if ($controllerName === 'Jellyfin') {
         if ($id === 'info' && $method === 'GET') {
             $controller->getInfo($params);

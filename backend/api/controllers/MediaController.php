@@ -402,4 +402,222 @@ class MediaController {
         
         return $errors;
     }
+
+    /**
+     * Scan local media directory and return available files
+     */
+    public function scanLocalMedia() {
+        // Check if user is authenticated
+        // Temporarily disabled for testing
+        // $userData = JWTHandler::getAuthUser();
+        
+        // if (!$userData) {
+        //     ApiResponse::unauthorized();
+        // }
+        
+        // Define directories to scan
+        $mediaRoot = getenv('MEDIA_DIR') ?: '/media';
+        $moviesDir = $mediaRoot . '/movies';
+        $tvDir = $mediaRoot . '/tv';
+        
+        $response = [
+            'movies' => [],
+            'series' => []
+        ];
+        
+        // Scan movies directory
+        if (file_exists($moviesDir) && is_readable($moviesDir)) {
+            $movieFiles = scandir($moviesDir);
+            foreach ($movieFiles as $file) {
+                if ($file === '.' || $file === '..') continue;
+                
+                $filePath = $moviesDir . '/' . $file;
+                if (is_file($filePath)) {
+                    // Get file extension
+                    $extension = pathinfo($file, PATHINFO_EXTENSION);
+                    $title = pathinfo($file, PATHINFO_FILENAME);
+                    
+                    // Only include video files
+                    $videoExtensions = ['mp4', 'mkv', 'avi', 'mov', 'webm'];
+                    if (in_array(strtolower($extension), $videoExtensions)) {
+                        $response['movies'][] = [
+                            'id' => 'movie_' . md5($file),
+                            'title' => $this->formatTitle($title),
+                            'type' => 'movie',
+                            'filename' => $file,
+                            'filepath' => '/api/media/file/movies/' . $file, // Path for direct access via API
+                            'filesize' => filesize($filePath),
+                            'thumbnailPath' => '/placeholder.jpg'
+                        ];
+                    }
+                }
+            }
+        }
+        
+        // Scan TV directory
+        if (file_exists($tvDir) && is_readable($tvDir)) {
+            $tvDirs = scandir($tvDir);
+            foreach ($tvDirs as $dir) {
+                if ($dir === '.' || $dir === '..') continue;
+                
+                $dirPath = $tvDir . '/' . $dir;
+                if (is_dir($dirPath)) {
+                    $response['series'][] = [
+                        'id' => 'series_' . md5($dir),
+                        'title' => $this->formatTitle($dir),
+                        'type' => 'series',
+                        'foldername' => $dir,
+                        'folderpath' => '/api/media/file/tv/' . $dir,
+                        'thumbnailPath' => '/placeholder.jpg'
+                    ];
+                }
+            }
+        }
+        
+        // Add log for debugging
+        error_log('Scanned media: ' . json_encode($response));
+        
+        ApiResponse::success($response);
+    }
+
+    /**
+     * Format a filename into a nicer title
+     */
+    private function formatTitle($filename) {
+        // Replace dots and underscores with spaces
+        $title = str_replace(['_', '.'], ' ', $filename);
+        
+        // Capitalize first letter of each word
+        $title = ucwords($title);
+        
+        return $title;
+    }
+
+    /**
+     * Serves a local media file directly
+     * 
+     * @param array $path Additional path segments
+     */
+    public function serveMediaFile($path) {
+        if (empty($path) || count($path) < 2) {
+            ApiResponse::error('Invalid media path', 400);
+        }
+        
+        $mediaType = $path[0]; // 'movies' or 'tv'
+        $fileName = implode('/', array_slice($path, 1)); // Rest of the path
+        
+        $mediaRoot = getenv('MEDIA_DIR') ?: '/media';
+        $fullPath = realpath($mediaRoot . '/' . $mediaType . '/' . $fileName);
+        
+        if (!$fullPath || !file_exists($fullPath) || !is_file($fullPath)) {
+            error_log("File not found: $mediaRoot/$mediaType/$fileName (Resolved to: $fullPath)");
+            ApiResponse::error('Media file not found', 404);
+        }
+        
+        // Security check - make sure the file is still within our media directory
+        if (strpos($fullPath, realpath($mediaRoot)) !== 0) {
+            ApiResponse::error('Access denied', 403);
+        }
+        
+        // Get file info
+        $fileSize = filesize($fullPath);
+        $fileExtension = pathinfo($fullPath, PATHINFO_EXTENSION);
+        
+        // Set content type based on extension
+        $contentType = 'video/mp4'; // Default
+        
+        switch (strtolower($fileExtension)) {
+            case 'mp4':
+                $contentType = 'video/mp4';
+                break;
+            case 'webm':
+                $contentType = 'video/webm';
+                break;
+            case 'ogg':
+            case 'ogv':
+                $contentType = 'video/ogg';
+                break;
+            case 'mkv':
+                $contentType = 'video/x-matroska';
+                break;
+            case 'avi':
+                $contentType = 'video/x-msvideo';
+                break;
+            case 'mov':
+                $contentType = 'video/quicktime';
+                break;
+            case 'wmv':
+                $contentType = 'video/x-ms-wmv';
+                break;
+            case 'flv':
+                $contentType = 'video/x-flv';
+                break;
+            case 'm4v':
+                $contentType = 'video/x-m4v';
+                break;
+            case '3gp':
+                $contentType = 'video/3gpp';
+                break;
+        }
+
+        // Clean output buffer to prevent any unexpected output before headers
+        if (ob_get_level()) {
+            ob_end_clean();
+        }
+        
+        // Set headers
+        header('Content-Type: ' . $contentType);
+        header('Accept-Ranges: bytes');
+        
+        // Allow CORS for video files
+        header('Access-Control-Allow-Origin: *');
+        header('Access-Control-Allow-Methods: GET, OPTIONS');
+        header('Access-Control-Allow-Headers: Content-Type, Content-Range, Content-Disposition, Content-Description');
+        
+        if (isset($_SERVER['HTTP_RANGE'])) {
+            // Handle range requests
+            $rangeRequest = true;
+            
+            preg_match('/bytes=(\d+)-(\d+)?/', $_SERVER['HTTP_RANGE'], $matches);
+            
+            $rangeStart = intval($matches[1]);
+            
+            if (isset($matches[2])) {
+                $rangeEnd = intval($matches[2]);
+            } else {
+                $rangeEnd = $fileSize - 1;
+            }
+            
+            // Partial content response
+            http_response_code(206);
+            header("Content-Range: bytes {$rangeStart}-{$rangeEnd}/{$fileSize}");
+            header('Content-Length: ' . ($rangeEnd - $rangeStart + 1));
+        } else {
+            // Full content response
+            header('Content-Length: ' . $fileSize);
+        }
+        
+        // Stream the file
+        $fp = fopen($fullPath, 'rb');
+        
+        if ($rangeRequest) {
+            fseek($fp, $rangeStart);
+            $bytesToRead = $rangeEnd - $rangeStart + 1;
+        } else {
+            $bytesToRead = $fileSize;
+        }
+        
+        $buffer = 1024 * 8;
+        
+        while (!feof($fp) && $bytesToRead > 0) {
+            $bytesToSend = min($buffer, $bytesToRead);
+            $data = fread($fp, $bytesToSend);
+            echo $data;
+            $bytesToRead -= strlen($data);
+            flush();
+        }
+        
+        fclose($fp);
+        exit;
+    }
 } 
