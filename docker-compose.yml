@@ -1,0 +1,81 @@
+version: '3.8'
+
+services:
+  # Frontend service
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    environment:
+      - NODE_ENV=development
+      - NEXT_PUBLIC_API_URL=http://localhost:8080/api
+    depends_on:
+      - backend
+    networks:
+      - fletnix-network
+
+  # Backend service
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "8080:80"
+    volumes:
+      - ./backend:/var/www/html
+    environment:
+      - DB_HOST=db
+      - DB_PORT=3306
+      - DB_DATABASE=fletnix
+      - DB_USERNAME=fletnix
+      - DB_PASSWORD=fletnix_password
+      - JWT_SECRET=your_jwt_secret_key
+      - JWT_EXPIRE=86400
+    depends_on:
+      - db
+    networks:
+      - fletnix-network
+
+  # Database service
+  db:
+    image: mysql:8.0
+    ports:
+      - "3306:3306"
+    environment:
+      - MYSQL_ROOT_PASSWORD=root_password
+      - MYSQL_DATABASE=fletnix
+      - MYSQL_USER=fletnix
+      - MYSQL_PASSWORD=fletnix_password
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./backend/config/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - fletnix-network
+
+  # Jellyfin service
+  jellyfin:
+    image: jellyfin/jellyfin:latest
+    ports:
+      - "8096:8096"
+      - "8920:8920" # Optional HTTPS port
+    environment:
+      - JELLYFIN_PublishedServerUrl=http://localhost:8096
+    volumes:
+      - jellyfin_config:/config
+      - jellyfin_cache:/cache
+      - ./media:/media
+    restart: unless-stopped
+
+networks:
+  fletnix-network:
+    driver: bridge
+
+volumes:
+  mysql_data:
+  jellyfin_config:
+  jellyfin_cache: 

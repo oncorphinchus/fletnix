@@ -1,0 +1,48 @@
+# Enable URL rewriting
+RewriteEngine On
+
+# Set the base directory for the rewrite rules
+RewriteBase /
+
+# Prevent direct access to .php files
+RewriteCond %{THE_REQUEST} ^[A-Z]{3,}\s([^.]+)\.php [NC]
+RewriteRule ^ %1 [R=301,L]
+
+# Route all API requests to the api/index.php file
+RewriteRule ^api/?$ api/index.php [L]
+RewriteRule ^api/(.*)$ api/index.php [QSA,L]
+
+# Only apply to requests that don't point to real files or directories
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+
+# Handle requests for non-existent files
+RewriteRule ^(.*)$ index.php [QSA,L]
+
+# Set default character set
+AddDefaultCharset UTF-8
+
+# Disable directory listing
+Options -Indexes
+
+# Set security headers
+<IfModule mod_headers.c>
+    # Protect against XSS attacks
+    Header set X-XSS-Protection "1; mode=block"
+    
+    # Prevent MIME-type sniffing
+    Header set X-Content-Type-Options "nosniff"
+    
+    # Control framing of the page
+    Header set X-Frame-Options "SAMEORIGIN"
+</IfModule>
+
+# PHP settings
+<IfModule mod_php8.c>
+    # Maximum upload file size
+    php_value upload_max_filesize 100M
+    php_value post_max_size 100M
+    
+    # Maximum execution time
+    php_value max_execution_time 300
+</IfModule> 
