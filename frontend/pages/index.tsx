@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
-import Layout from '../components/Layout';
-import MediaGrid from '../components/MediaGrid';
-import { fetchWithAuth, isAuthenticated } from '../lib/auth';
+import Layout from '@/components/Layout';
+import MediaGrid from '@/components/MediaGrid';
+import { fetchWithAuth, isAuthenticated } from '@/lib/auth';
 
 // Define API Media item interface
 interface ApiMediaItem {
@@ -25,7 +25,7 @@ function adaptMediaItems(apiItems: ApiMediaItem[]): Array<{
   return apiItems.map(item => ({
     id: String(item.id),
     title: item.title,
-    thumbnailPath: item.poster_path,
+    thumbnailPath: item.poster_path || '/placeholder.jpg', // Provide a default placeholder
     type: item.type
   }));
 }
@@ -34,10 +34,13 @@ const Home: React.FC = () => {
   const router = useRouter();
   const [featuredMedia, setFeaturedMedia] = useState<ApiMediaItem[]>([]);
   const [recentAdditions, setRecentAdditions] = useState<ApiMediaItem[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string>('');
   
   useEffect(() => {
+    // Don't do anything if router isn't ready yet
+    if (!router || !router.isReady) return;
+    
     // Redirect to login if not authenticated
     if (!isAuthenticated()) {
       router.push('/login');
@@ -49,20 +52,36 @@ const Home: React.FC = () => {
       try {
         // Fetch featured media
         const featuredResponse = await fetchWithAuth('/api/media/featured');
+        
+        if (!featuredResponse) {
+          throw new Error('Failed to fetch featured media');
+        }
+        
         if (featuredResponse.ok) {
           const featuredData = await featuredResponse.json();
           setFeaturedMedia(featuredData.data || []);
+        } else {
+          console.error('Featured media response not OK:', featuredResponse.status);
+          throw new Error(`Failed to load featured media: ${featuredResponse.statusText}`);
         }
         
         // Fetch recent additions
         const recentResponse = await fetchWithAuth('/api/media/recent');
+        
+        if (!recentResponse) {
+          throw new Error('Failed to fetch recent additions');
+        }
+        
         if (recentResponse.ok) {
           const recentData = await recentResponse.json();
           setRecentAdditions(recentData.data || []);
+        } else {
+          console.error('Recent additions response not OK:', recentResponse.status);
+          throw new Error(`Failed to load recent additions: ${recentResponse.statusText}`);
         }
       } catch (err) {
         console.error('Error fetching media:', err);
-        setError('Failed to load media content. Please try again later.');
+        setError(err instanceof Error ? err.message : 'Failed to load media content. Please try again later.');
       } finally {
         setIsLoading(false);
       }
@@ -70,6 +89,15 @@ const Home: React.FC = () => {
     
     fetchMedia();
   }, [router]);
+  
+  // If router is not ready yet, show a loading indicator
+  if (!router || !router.isReady) {
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
   
   return (
     <Layout>

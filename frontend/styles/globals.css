@@ -60,6 +60,15 @@
   }
 }
 
+/* Additional custom styles */
+.primary {
+  color: var(--primary);
+}
+
+.primary-bg {
+  background-color: var(--primary);
+}
+
 /* Media grid hover effects */
 .media-item {
   @apply transition-transform duration-200;

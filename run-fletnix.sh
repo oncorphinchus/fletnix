@@ -44,7 +44,7 @@ if [ "$ALL_RUNNING" = true ]; then
   echo -e "\n${GREEN}All services are running!${NC}"
   echo -e "\n${YELLOW}Access your services:${NC}"
   echo -e "${GREEN}Frontend:${NC} http://localhost:3000"
-  echo -e "${GREEN}Backend API:${NC} http://localhost:8080/api"
+  echo -e "${GREEN}Backend API:${NC} http://localhost:8083/api"
   echo -e "${GREEN}Jellyfin:${NC} http://localhost:8096"
   
   echo -e "\n${YELLOW}Login credentials:${NC}"

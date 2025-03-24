@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
 import Link from 'next/link';
-import { login, isAuthenticated } from '../lib/auth';
+import { setLocalToken, isAuthenticated } from '@/lib/auth';
 
 const Login: React.FC = () => {
   const router = useRouter();
@@ -12,30 +12,44 @@ const Login: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   
   useEffect(() => {
-    // If already authenticated, redirect to home page
+    console.log("Login page loaded");
+    // If user is already authenticated, redirect to home
     if (isAuthenticated()) {
+      console.log("User already authenticated, redirecting to home");
       router.push('/');
     }
   }, [router]);
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // Validate inputs
-    if (!username || !password) {
-      setError('Please enter both username and password');
-      return;
-    }
+    setError('');
+    setIsLoading(true);
     
     try {
-      setIsLoading(true);
-      setError('');
+      console.log("Attempting login with username:", username);
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ username, password }),
+      });
       
-      await login(username, password);
-      router.push('/');
+      console.log("Login response status:", response.status);
+      
+      if (response.ok) {
+        const data = await response.json();
+        console.log("Login successful, token received");
+        setLocalToken(data.token);
+        router.push('/');
+      } else {
+        const errorData = await response.json();
+        console.error("Login error:", errorData);
+        setError(errorData.message || 'Invalid username or password');
+      }
     } catch (err) {
-      console.error('Login error:', err);
-      setError(err instanceof Error ? err.message : 'Failed to login. Please try again.');
+      console.error("Login fetch error:", err);
+      setError('Failed to connect to the server. Please try again later.');
     } finally {
       setIsLoading(false);
     }

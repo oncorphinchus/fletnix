@@ -13,7 +13,7 @@ services:
       - /app/node_modules
     environment:
       - NODE_ENV=development
-      - NEXT_PUBLIC_API_URL=http://localhost:8080/api
+      - NEXT_PUBLIC_API_URL=http://localhost:8083/api
     depends_on:
       - backend
     networks:
@@ -25,12 +25,12 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     ports:
-      - "8080:80"
+      - "8083:80"
     volumes:
       - ./backend:/var/www/html
     environment:
       - DB_HOST=db
-      - DB_PORT=3306
+      - DB_PORT=3307
       - DB_DATABASE=fletnix
       - DB_USERNAME=fletnix
       - DB_PASSWORD=fletnix_password
@@ -45,7 +45,7 @@ services:
   db:
     image: mysql:8.0
     ports:
-      - "3306:3306"
+      - "3307:3306"
     environment:
       - MYSQL_ROOT_PASSWORD=root
       - MYSQL_DATABASE=fletnix

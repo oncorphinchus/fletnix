@@ -4,6 +4,7 @@
 export const setLocalToken = (token: string): void => {
   if (typeof window !== 'undefined') {
     localStorage.setItem('fletnix_token', token);
+    console.log('Token stored in localStorage');
   }
 };
 
@@ -19,12 +20,15 @@ export const getLocalToken = (): string | null => {
 export const removeLocalToken = (): void => {
   if (typeof window !== 'undefined') {
     localStorage.removeItem('fletnix_token');
+    console.log('Token removed from localStorage');
   }
 };
 
-// Check if token exists
+// Check if user is authenticated
 export const isAuthenticated = (): boolean => {
-  return !!getLocalToken();
+  const token = getLocalToken();
+  console.log('isAuthenticated check, token exists:', !!token);
+  return !!token;
 };
 
 // API authentication functions
@@ -84,44 +88,52 @@ export const register = async (userData: {
   }
 };
 
+// Logout function
 export const logout = (): void => {
   removeLocalToken();
 };
 
-// Helper function to make authenticated API requests
-export const fetchWithAuth = async (url: string, options: RequestInit = {}): Promise<any> => {
+// Fetch with authentication token
+export const fetchWithAuth = async (url: string, options: RequestInit = {}): Promise<Response> => {
   const token = getLocalToken();
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
   
-  if (!token) {
-    throw new Error('No authentication token found');
+  console.log('fetchWithAuth called for URL:', apiUrl + url);
+  console.log('Token exists:', !!token);
+  
+  // If we're server-side or token doesn't exist, return null
+  if (typeof window === 'undefined' || !token) {
+    console.log('No token or server-side rendering, returning null');
+    return Promise.reject(new Error('No authentication token'));
   }
-  
-  const headers = {
-    ...options.headers,
-    'Authorization': `Bearer ${token}`,
+
+  // Add authorization header to options
+  const authOptions: RequestInit = {
+    ...options,
+    headers: {
+      ...options.headers,
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
   };
-  
+
   try {
-    const response = await fetch(url, {
-      ...options,
-      headers,
-    });
+    console.log('Fetching with auth headers');
+    const response = await fetch(apiUrl + url, authOptions);
     
-    const data = await response.json();
-    
-    if (!response.ok) {
-      // Handle 401 Unauthorized errors
-      if (response.status === 401) {
-        removeLocalToken();
-        throw new Error('Authentication expired. Please login again.');
+    // Handle unauthorized response (e.g., token expired)
+    if (response.status === 401) {
+      console.log('Unauthorized response, removing token');
+      removeLocalToken();
+      // Redirect to login page
+      if (typeof window !== 'undefined') {
+        window.location.href = '/login';
       }
-      
-      throw new Error(data.message || 'API request failed');
     }
     
-    return data;
+    return response;
   } catch (error) {
-    console.error('API request error:', error);
+    console.error('Error in fetchWithAuth:', error);
     throw error;
   }
 }; 

@@ -2,7 +2,8 @@
 const nextConfig = {
   reactStrictMode: true,
   images: {
-    domains: ['localhost'],
+    domains: ['localhost', 'image.tmdb.org', 'themoviedb.org', 'jellyfin.org'],
+    unoptimized: true,
   },
   // Allow cross-origin for API requests
   async headers() {
