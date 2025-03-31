@@ -40,8 +40,17 @@ const SeriesPage: React.FC = () => {
       const localMedia = await fetchLocalMedia();
       
       if (localMedia && localMedia.series && localMedia.series.length > 0) {
-        console.log('Found local TV series folders:', localMedia.series);
-        setSeries(localMedia.series);
+        // Add a timestamp parameter to prevent image caching
+        const timestamp = Date.now();
+        const processedSeries = localMedia.series.map((series: MediaItem) => ({
+          ...series,
+          thumbnailPath: series.thumbnailPath?.includes('?') 
+            ? `${series.thumbnailPath}&t=${timestamp}` 
+            : `${series.thumbnailPath}?t=${timestamp}`
+        }));
+        
+        console.log('Found local series:', processedSeries);
+        setSeries(processedSeries);
         return;
       }
       

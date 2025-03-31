@@ -120,6 +120,9 @@ try {
     } else if ($controllerName === 'Media' && $id === 'file' && $method === 'GET') {
         // Special handler for serving media files directly
         $controller->serveMediaFile(array_slice($segments, 2));
+    } else if ($controllerName === 'Media' && $id === 'thumbnail' && $method === 'GET') {
+        // Special handler for serving thumbnail images
+        $controller->serveThumbnail(array_slice($segments, 2));
     } else if ($controllerName === 'Jellyfin') {
         if ($id === 'info' && $method === 'GET') {
             $controller->getInfo($params);

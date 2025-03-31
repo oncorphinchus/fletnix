@@ -40,8 +40,17 @@ const MoviesPage: React.FC = () => {
       const localMedia = await fetchLocalMedia();
       
       if (localMedia && localMedia.movies && localMedia.movies.length > 0) {
-        console.log('Found local movie files:', localMedia.movies);
-        setMovies(localMedia.movies);
+        // Add a timestamp parameter to prevent image caching
+        const timestamp = Date.now();
+        const processedMovies = localMedia.movies.map((movie: MediaItem) => ({
+          ...movie,
+          thumbnailPath: movie.thumbnailPath?.includes('?') 
+            ? `${movie.thumbnailPath}&t=${timestamp}` 
+            : `${movie.thumbnailPath}?t=${timestamp}`
+        }));
+        
+        console.log('Found local movies:', processedMovies);
+        setMovies(processedMovies);
         return;
       }
       

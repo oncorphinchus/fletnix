@@ -43,14 +43,18 @@ const BrowsePage: React.FC = () => {
       const localMedia = await fetchLocalMedia();
       
       if (localMedia) {
-        const allLocalMedia: MediaItem[] = [
-          ...(localMedia.movies || []),
-          ...(localMedia.series || [])
-        ];
+        // Add a timestamp parameter to prevent image caching
+        const timestamp = Date.now();
+        const processedMedia = [...(localMedia.movies || []), ...(localMedia.series || [])].map(item => ({
+          ...item,
+          thumbnailPath: item.thumbnailPath?.includes('?') 
+            ? `${item.thumbnailPath}&t=${timestamp}` 
+            : `${item.thumbnailPath}?t=${timestamp}`
+        }));
         
-        if (allLocalMedia.length > 0) {
-          console.log('Found local media files:', allLocalMedia);
-          setMedia(allLocalMedia);
+        if (processedMedia.length > 0) {
+          console.log('Found local media files:', processedMedia);
+          setMedia(processedMedia);
           return;
         }
       }

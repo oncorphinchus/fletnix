@@ -404,6 +404,179 @@ class MediaController {
     }
 
     /**
+     * Generate or get thumbnail path for a local media file
+     * 
+     * @param string $filePath Full path to the media file
+     * @param string $mediaType Type of media (movies or tv)
+     * @param string $fileName Name of the file
+     * @return string Path to the thumbnail
+     */
+    private function getThumbnailPath($filePath, $mediaType, $fileName) {
+        // Define thumbnail directory
+        $mediaRoot = getenv('MEDIA_DIR') ?: '/media';
+        $thumbnailsDir = $mediaRoot . '/thumbnails';
+        
+        // Create thumbnails directory if it doesn't exist
+        if (!file_exists($thumbnailsDir)) {
+            mkdir($thumbnailsDir, 0755, true);
+        }
+        
+        // Create subdirectory for media type
+        $mediaTypeDir = $thumbnailsDir . '/' . $mediaType;
+        if (!file_exists($mediaTypeDir)) {
+            mkdir($mediaTypeDir, 0755, true);
+        }
+        
+        // Thumbnail file path (using MD5 hash to create a unique name)
+        $fileHash = md5($fileName);
+        $thumbnailFile = $mediaTypeDir . '/' . $fileHash . '.jpg';
+        $thumbnailApiPath = '/api/media/thumbnail/' . $mediaType . '/' . $fileHash . '.jpg';
+        
+        // Check if thumbnail already exists
+        if (file_exists($thumbnailFile)) {
+            return $thumbnailApiPath;
+        }
+        
+        // Generate a simple colorful thumbnail based on the file hash
+        // This creates a unique but consistent color for each file
+        $width = 500;
+        $height = 750;
+        
+        // Use different dimensions for TV series (wider)
+        if ($mediaType === 'tv') {
+            $width = 800;
+            $height = 450;
+        }
+        
+        // Create blank image
+        $image = imagecreatetruecolor($width, $height);
+        
+        // Generate background color from hash
+        $r = hexdec(substr($fileHash, 0, 2));
+        $g = hexdec(substr($fileHash, 2, 2));
+        $b = hexdec(substr($fileHash, 4, 2));
+        
+        // Make sure the colors are not too dark
+        $r = max(50, $r);
+        $g = max(50, $g);
+        $b = max(50, $b);
+        
+        $bgColor = imagecolorallocate($image, $r, $g, $b);
+        $textColor = imagecolorallocate($image, 255, 255, 255);
+        
+        // Fill the background
+        imagefill($image, 0, 0, $bgColor);
+        
+        // Format the title nicely
+        $title = $this->formatTitle(pathinfo($fileName, PATHINFO_FILENAME));
+        
+        // Add a gradient overlay
+        $this->addGradientOverlay($image, $width, $height);
+        
+        // Add title text at the bottom
+        $this->addTitleText($image, $title, $width, $height);
+        
+        // Save the image
+        imagejpeg($image, $thumbnailFile, 90);
+        imagedestroy($image);
+        
+        if (file_exists($thumbnailFile)) {
+            return $thumbnailApiPath;
+        }
+        
+        // Use default placeholder as fallback
+        if ($mediaType === 'movies') {
+            return '/placeholder.jpg';
+        } else {
+            return '/placeholder-wide.jpg';
+        }
+    }
+    
+    /**
+     * Add a gradient overlay to an image
+     * 
+     * @param resource $image GD image resource
+     * @param int $width Image width
+     * @param int $height Image height
+     */
+    private function addGradientOverlay($image, $width, $height) {
+        // Create a black to transparent gradient for the bottom third
+        $gradientHeight = $height / 3;
+        $startY = $height - $gradientHeight;
+        
+        for ($y = $startY; $y < $height; $y++) {
+            // Calculate alpha based on position (0 at the bottom, 127 at the top of gradient)
+            $alpha = 127 - (($y - $startY) / $gradientHeight) * 127;
+            $overlayColor = imagecolorallocatealpha($image, 0, 0, 0, $alpha);
+            
+            // Draw a line with this alpha
+            imageline($image, 0, $y, $width, $y, $overlayColor);
+        }
+    }
+    
+    /**
+     * Add title text to an image
+     * 
+     * @param resource $image GD image resource
+     * @param string $title The title text
+     * @param int $width Image width
+     * @param int $height Image height
+     */
+    private function addTitleText($image, $title, $width, $height) {
+        // Limit title length and add ellipsis if needed
+        if (strlen($title) > 30) {
+            $title = substr($title, 0, 27) . '...';
+        }
+        
+        // Calculate text dimensions and position
+        $fontSize = 5; // Max GD built-in font size
+        $textWidth = imagefontwidth($fontSize) * strlen($title);
+        $textHeight = imagefontheight($fontSize);
+        
+        $x = ($width - $textWidth) / 2;
+        $y = $height - $textHeight - 20; // 20px padding from bottom
+        
+        // Add a drop shadow
+        imagestring($image, $fontSize, $x + 1, $y + 1, $title, imagecolorallocatealpha($image, 0, 0, 0, 40));
+        
+        // Add the main text
+        imagestring($image, $fontSize, $x, $y, $title, imagecolorallocate($image, 255, 255, 255));
+    }
+    
+    /**
+     * Serve a thumbnail image
+     * 
+     * @param array $path Additional path segments
+     */
+    public function serveThumbnail($path) {
+        if (empty($path) || count($path) < 2) {
+            ApiResponse::error('Invalid thumbnail path', 400);
+        }
+        
+        $mediaType = $path[0]; // 'movies' or 'tv'
+        $fileName = implode('/', array_slice($path, 1)); // Rest of the path
+        
+        $mediaRoot = getenv('MEDIA_DIR') ?: '/media';
+        $thumbnailPath = $mediaRoot . '/thumbnails/' . $mediaType . '/' . $fileName;
+        
+        // If thumbnail doesn't exist, serve placeholder
+        if (!file_exists($thumbnailPath)) {
+            $placeholderPath = __DIR__ . '/../../../frontend/public/placeholder.jpg';
+            header('Content-Type: image/jpeg');
+            header('Content-Length: ' . filesize($placeholderPath));
+            readfile($placeholderPath);
+            exit;
+        }
+        
+        // Serve the thumbnail
+        header('Content-Type: image/jpeg');
+        header('Content-Length: ' . filesize($thumbnailPath));
+        header('Cache-Control: max-age=86400'); // Cache for a day
+        readfile($thumbnailPath);
+        exit;
+    }
+
+    /**
      * Scan local media directory and return available files
      */
     public function scanLocalMedia() {
@@ -440,6 +613,9 @@ class MediaController {
                     // Only include video files
                     $videoExtensions = ['mp4', 'mkv', 'avi', 'mov', 'webm'];
                     if (in_array(strtolower($extension), $videoExtensions)) {
+                        // Get thumbnail path
+                        $thumbnailPath = $this->getThumbnailPath($filePath, 'movies', $file);
+                        
                         $response['movies'][] = [
                             'id' => 'movie_' . md5($file),
                             'title' => $this->formatTitle($title),
@@ -447,7 +623,7 @@ class MediaController {
                             'filename' => $file,
                             'filepath' => '/api/media/file/movies/' . $file, // Path for direct access via API
                             'filesize' => filesize($filePath),
-                            'thumbnailPath' => '/placeholder.jpg'
+                            'thumbnailPath' => $thumbnailPath
                         ];
                     }
                 }
@@ -462,13 +638,16 @@ class MediaController {
                 
                 $dirPath = $tvDir . '/' . $dir;
                 if (is_dir($dirPath)) {
+                    // Get thumbnail path (for folder)
+                    $thumbnailPath = $this->getThumbnailPath($dirPath, 'tv', $dir);
+                    
                     $response['series'][] = [
                         'id' => 'series_' . md5($dir),
                         'title' => $this->formatTitle($dir),
                         'type' => 'series',
                         'foldername' => $dir,
                         'folderpath' => '/api/media/file/tv/' . $dir,
-                        'thumbnailPath' => '/placeholder.jpg'
+                        'thumbnailPath' => $thumbnailPath
                     ];
                 }
             }
